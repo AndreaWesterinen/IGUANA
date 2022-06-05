@@ -35,12 +35,12 @@ public class QPSMetric extends AbstractMetric {
 	private static Property penalizedQPSProperty = ResourceFactory.createProperty(COMMON.PROP_BASE_URI+"penalizedQPS");
 	private static Property queryID = ResourceFactory.createProperty(COMMON.PROP_BASE_URI+"queryID");
 
-	private static Property meanTime = ResourceFactory.createProperty(COMMON.PROP_WIKIBASE_URI+"meanQueryTime");
-	private static Property penalizedMeanTime = ResourceFactory.createProperty(COMMON.PROP_WIKIBASE_URI+"penalizedMeanQueryTime");
-	private static Property geometricMeanTime= ResourceFactory.createProperty(COMMON.PROP_WIKIBASE_URI+"geometricMeanQueryTime");
-	private static Property penalizedGeometricMeanTime = ResourceFactory.createProperty(COMMON.PROP_WIKIBASE_URI+"penalizedGeometricMeanQueryTime");
-	private static Property minTime = ResourceFactory.createProperty(COMMON.PROP_WIKIBASE_URI+"minQueryTime");
-	private static Property maxTime = ResourceFactory.createProperty(COMMON.PROP_WIKIBASE_URI+"maxQueryTime");
+	private static Property meanTime = ResourceFactory.createProperty(COMMON.PROP_BASE_URI+"meanQueryTime");
+	private static Property penalizedMeanTime = ResourceFactory.createProperty(COMMON.PROP_BASE_URI+"penalizedMeanQueryTime");
+	private static Property geometricMeanTime= ResourceFactory.createProperty(COMMON.PROP_BASE_URI+"geometricMeanQueryTime");
+	private static Property penalizedGeometricMeanTime = ResourceFactory.createProperty(COMMON.PROP_BASE_URI+"penalizedGeometricMeanQueryTime");
+	private static Property minTime = ResourceFactory.createProperty(COMMON.PROP_BASE_URI+"minQueryTime");
+	private static Property maxTime = ResourceFactory.createProperty(COMMON.PROP_BASE_URI+"maxQueryTime");
 
 	protected Integer penalty = null;
 	private boolean noPenalty= false;
