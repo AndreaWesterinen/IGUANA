@@ -124,9 +124,10 @@ public class QPSMetric extends AbstractMetric {
 				}
 				oldArr[11] = (double) oldArr[11] + time;   // For mean
 				oldArr[12] = (double) oldArr[12] + (double)Math.log(time);   // For geometric mean
-				oldArr[13] = (double) oldArr[13] + penalizedTime;   // For penalized mean
-				oldArr[14] = (double) oldArr[14] + (double)Math.log(penalizedTime);   // For penalized geometric mean
 			}
+			// Penalized stats are calculated regardless of success (that is the point)
+			oldArr[13] = (double) oldArr[13] + penalizedTime;
+			oldArr[14] = (double) oldArr[14] + (double)Math.log(penalizedTime);
 			return tmp;
 		}
 		if(tmp==null) {
@@ -140,7 +141,8 @@ public class QPSMetric extends AbstractMetric {
 		}
 		else {
 			Object[] resArr = new Object[]{time, success, failure, size, timeout, unknown, wrongCode,
-					penalizedTime, queryHash, minMaxDefault, minMaxDefault, zero, zero, zero, zero};
+					penalizedTime, queryHash, minMaxDefault, minMaxDefault, zero, zero, penalizedTime,
+					(double)Math.log(penalizedTime)};
 			tmp.put(queryID, resArr);
 		}
 		return tmp;
@@ -213,14 +215,12 @@ public class QPSMetric extends AbstractMetric {
 			long succeeded = (long)resArr[1];
 			double mean = zero;   // Define variables outside the if clause for use later
 			double geomMean = zero;
-			double pMean = zero;
-			double pGeomMean = zero;
 			if (succeeded>0L){
 				mean = (double)resArr[11]/succeeded;
 				geomMean = (double)Math.exp((double)resArr[12]/succeeded);
-				pMean = (double)resArr[13]/succeeded;
-				pGeomMean = (double)Math.exp((double)resArr[14]/succeeded);
 			}
+			double pMean = (double)resArr[13]/(succeeded+(long)resArr[2]);   // Account for all tests (success and failure)
+			double pGeomMean = (double)Math.exp((double)resArr[14]/(succeeded+(long)resArr[2]));
 
 			Resource query = ResourceFactory.createResource(subjectParent.getURI()+"/"+queryID);
 			m.add(subjectParent, queryProperty, query);
@@ -273,17 +273,21 @@ public class QPSMetric extends AbstractMetric {
 					String pQpsStr = "penal.qps." + String.valueOf(pqps);
 					m.add(query, penalizedQPSProperty, ResourceFactory.createTypedLiteral(pQpsStr));
 				}
-				if (succeeded>0L){
+				try {
 					BigDecimal pMeanBD = new BigDecimal(String.valueOf(pMean));
 					m.add(query, penalizedMeanTime, ResourceFactory.createTypedLiteral(pMeanBD));
+				} catch (NumberFormatException e) {
+					String pMeanStr = "penal.mean." + String.valueOf(pMean);
+					m.add(query, penalizedMeanTime, ResourceFactory.createTypedLiteral(pMeanStr));
+				}
+				try {
 					BigDecimal pgMeanBD = new BigDecimal(String.valueOf(pGeomMean));
 					float fpgMean = pgMeanBD.floatValue();
 					BigDecimal fpgMeanBD = new BigDecimal(String.valueOf(fpgMean));
 					m.add(query, penalizedGeometricMeanTime, ResourceFactory.createTypedLiteral(fpgMeanBD));
-				}
-				else{
-					m.add(query, penalizedMeanTime, ResourceFactory.createTypedLiteral("?"));
-					m.add(query, penalizedGeometricMeanTime, ResourceFactory.createTypedLiteral("?"));
+				} catch (NumberFormatException e) {
+					String pMeanStr = "penal.geom.mean." + String.valueOf(pGeomMean);
+					m.add(query, penalizedGeometricMeanTime, ResourceFactory.createTypedLiteral(pMeanStr));
 				}
 			}
 			m.add(query, QPSMetric.queryID, ResourceFactory.createResource(COMMON.RES_BASE_URI+(int)resArr[8]+ "/" + queryID.toString()));

@@ -80,8 +80,8 @@
 <http://iguana-benchmark.eu/resource/1/1/1/1/sparql2> <http://iguana-benchmark.eu/properties/maxQueryTime> "?".
 <http://iguana-benchmark.eu/resource/1/1/1/1/sparql2> <http://iguana-benchmark.eu/properties/meanQueryTime> "?".
 <http://iguana-benchmark.eu/resource/1/1/1/1/sparql2> <http://iguana-benchmark.eu/properties/geometricMeanQueryTime> "?".
-<http://iguana-benchmark.eu/resource/1/1/1/1/sparql2> <http://iguana-benchmark.eu/properties/penalizedMeanQueryTime> "?".
-<http://iguana-benchmark.eu/resource/1/1/1/1/sparql2> <http://iguana-benchmark.eu/properties/penalizedGeometricMeanQueryTime> "?".
+<http://iguana-benchmark.eu/resource/1/1/1/1/sparql2> <http://iguana-benchmark.eu/properties/penalizedMeanQueryTime> "2000"^^<http://www.w3.org/2001/XMLSchema#decimal>.
+<http://iguana-benchmark.eu/resource/1/1/1/1/sparql2> <http://iguana-benchmark.eu/properties/penalizedGeometricMeanQueryTime> "2000"^^<http://www.w3.org/2001/XMLSchema#decimal>.
 <http://iguana-benchmark.eu/resource/1/1/1/1/sparql2> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://iguana-benchmark.eu/class/ExecutedQuery> .
 
 <http://iguana-benchmark.eu/resource/1/1/1> <http://iguana-benchmark.eu/properties/workerResult> <http://iguana-benchmark.eu/resource/1/1/1/1> .
@@ -122,8 +122,8 @@
 <http://iguana-benchmark.eu/resource/1/1/1/sparql2> <http://iguana-benchmark.eu/properties/maxQueryTime> "250"^^<http://www.w3.org/2001/XMLSchema#decimal>.
 <http://iguana-benchmark.eu/resource/1/1/1/sparql2> <http://iguana-benchmark.eu/properties/meanQueryTime> "250"^^<http://www.w3.org/2001/XMLSchema#decimal>.
 <http://iguana-benchmark.eu/resource/1/1/1/sparql2> <http://iguana-benchmark.eu/properties/geometricMeanQueryTime> "250"^^<http://www.w3.org/2001/XMLSchema#decimal>.
-<http://iguana-benchmark.eu/resource/1/1/1/sparql2> <http://iguana-benchmark.eu/properties/penalizedMeanQueryTime> "250"^^<http://www.w3.org/2001/XMLSchema#decimal>.
-<http://iguana-benchmark.eu/resource/1/1/1/sparql2> <http://iguana-benchmark.eu/properties/penalizedGeometricMeanQueryTime> "250"^^<http://www.w3.org/2001/XMLSchema#decimal>.
+<http://iguana-benchmark.eu/resource/1/1/1/sparql2> <http://iguana-benchmark.eu/properties/penalizedMeanQueryTime> "1125"^^<http://www.w3.org/2001/XMLSchema#decimal>.
+<http://iguana-benchmark.eu/resource/1/1/1/sparql2> <http://iguana-benchmark.eu/properties/penalizedGeometricMeanQueryTime> "707.1068"^^<http://www.w3.org/2001/XMLSchema#decimal>.
 <http://iguana-benchmark.eu/resource/1/1/1/sparql2> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://iguana-benchmark.eu/class/ExecutedQuery> .
 
 <http://iguana-benchmark.eu/resource/QPS> <http://www.w3.org/2000/01/rdf-schema#label> "Queries Per Second" .
