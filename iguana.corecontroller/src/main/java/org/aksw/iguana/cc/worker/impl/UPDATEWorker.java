@@ -6,10 +6,17 @@ import org.aksw.iguana.cc.query.set.QuerySet;
 import org.aksw.iguana.cc.worker.impl.update.UpdateTimer;
 import org.aksw.iguana.commons.annotation.Nullable;
 import org.aksw.iguana.commons.annotation.Shorthand;
+import org.apache.http.HttpHeaders;
+import org.apache.http.client.config.RequestConfig;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.StringEntity;
 import org.aksw.iguana.commons.constants.COMMON;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Properties;
 
@@ -23,15 +30,40 @@ import static org.aksw.iguana.commons.time.TimeUtils.durationInMilliseconds;
  *
  */
 @Shorthand("UPDATEWorker")
-public class UPDATEWorker extends HttpPostWorker {
+public class UPDATEWorker extends HttpGetWorker {
+
+	private String contentType = "application/sparql-update";
 
 	private int currentQueryID = 0;
 	private UpdateTimer updateTimer = new UpdateTimer();
 	private String timerStrategy;
 
-	public UPDATEWorker(String taskID, Connection connection, String queriesFile, @Nullable String timerStrategy, @Nullable Integer timeOut, @Nullable Integer timeLimit, @Nullable Integer fixedLatency, @Nullable Integer gaussianLatency, Integer workerID) {
-		super(taskID, connection, queriesFile, "application/sparql-update", null, null, "lang.SPARQL", timeOut, timeLimit, fixedLatency, gaussianLatency, "UPDATEWorker", workerID);
+	public UPDATEWorker(String taskID, Connection connection, String queriesFile,
+						@Nullable String timerStrategy, @Nullable Integer timeOut, @Nullable Integer timeLimit,
+						@Nullable Integer fixedLatency, @Nullable Integer gaussianLatency, Integer workerID) {
+		super(taskID, connection, queriesFile, null, "update",
+				"lang.SPARQL", timeOut, timeLimit, fixedLatency, gaussianLatency, "UPDATEWorker", workerID);
+		this.contentType=contentType;
 		this.timerStrategy=timerStrategy;
+	}
+
+	/*
+	 Updated from HttpGetMethod
+	 */
+	void buildRequest(String query, String queryID) throws UnsupportedEncodingException {
+		StringEntity entity = new StringEntity(query);
+		request = new HttpPost(con.getUpdateEndpoint());
+		((HttpPost) request).setEntity(entity);
+		request.setHeader("Content-Type", contentType);
+		RequestConfig requestConfig = RequestConfig.custom()
+				.setSocketTimeout(timeOut.intValue())
+				.setConnectTimeout(timeOut.intValue())
+				.build();
+
+		if (this.responseType != null)
+			request.setHeader(HttpHeaders.ACCEPT, this.responseType);
+
+		request.setConfig(requestConfig);
 	}
 
 	@Override
@@ -70,28 +102,31 @@ public class UPDATEWorker extends HttpPostWorker {
 			result.put(COMMON.EXTRA_META_KEY, this.extra);
 			setResults(result);
 			executedQueries++;
-
-
 	}
 
 	@Override
 	public void getNextQuery(StringBuilder queryStr, StringBuilder queryID) throws IOException {
-		// If there is no more update send end signal, as their is nothing to do anymore
+		// If there are no more updates, send end signal
 		if (this.currentQueryID >= this.queryFileList.length) {
 			this.stopSending();
 			return;
 		}
-		// get next Query File and next random Query out of it.
+		// get next query
 		QuerySet currentQueryFile = this.queryFileList[this.currentQueryID++];
 		queryID.append(currentQueryFile.getName());
 
-		queryStr.append(currentQueryFile.getContent());
-
+		int queriesInFile = currentQueryFile.size();
+		int queryLine = 0;
+		if (queriesInFile > 1) {
+			queryLine = queryChooser.nextInt(queriesInFile);
+		}
+		queryStr.append(currentQueryFile.getQueryAtPos(queryLine));
 	}
 
 	@Override
-	public void setQueriesList(QuerySet[] updateFiles) {
-		super.setQueriesList(updateFiles);
+	public void setQueriesList(QuerySet[] queries) {
+		super.setQueriesList(queries);
+		this.currentQueryID = 0;
 	}
 
 	/**
@@ -126,7 +161,6 @@ public class UPDATEWorker extends HttpPostWorker {
 		}
 		LOGGER.debug("Worker[{{}} : {{}}]: UpdateTimer was set to UpdateTimer:{{}}", workerType, workerID, updateTimer);
 	}
-
 
 
 	/**

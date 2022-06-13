@@ -52,7 +52,10 @@ public abstract class HttpWorker extends AbstractRandomQueryChooserWorker {
 
 
 
-    public HttpWorker(String taskID, Connection connection, String queriesFile, @Nullable Integer timeOut, @Nullable Integer timeLimit, @Nullable Integer fixedLatency, @Nullable Integer gaussianLatency, String workerType, Integer workerID) {
+    public HttpWorker(String taskID, Connection connection, String queriesFile,
+                      @Nullable Integer timeOut, @Nullable Integer timeLimit,
+                      @Nullable Integer fixedLatency, @Nullable Integer gaussianLatency,
+                      String workerType, Integer workerID) {
         super(taskID, connection, queriesFile, timeOut, timeLimit, fixedLatency, gaussianLatency, workerType, workerID);
         timeoutExecutorPool.setRemoveOnCancelPolicy(true);
     }
@@ -74,7 +77,7 @@ public abstract class HttpWorker extends AbstractRandomQueryChooserWorker {
     }
 
     protected void abortTimeout() {
-        if (!abortCurrentRequestFuture.isDone())
+        if (abortCurrentRequestFuture != null && !abortCurrentRequestFuture.isDone())
             abortCurrentRequestFuture.cancel(false);
     }
 
@@ -145,13 +148,19 @@ public abstract class HttpWorker extends AbstractRandomQueryChooserWorker {
 
         try {
             buildRequest(query, queryId);
-
             setTimeout(timeOut.intValue());
             
             requestStartTime = Instant.now();
-            response = client.execute(request, getAuthContext(con.getEndpoint()));
+            boolean updateQuery = false;
+            if (query.contains("INSERT DATA") || query.contains("DELETE DATA")) {
+                updateQuery = true;
+                response = client.execute(request, getAuthContext(con.getUpdateEndpoint()));
+            }
+            else {
+                response = client.execute(request, getAuthContext(con.getEndpoint()));
+            }
             // method to process the result in background
-            processHttpResponse();
+            processHttpResponse(updateQuery);
 
             abortTimeout();
 
@@ -182,40 +191,47 @@ public abstract class HttpWorker extends AbstractRandomQueryChooserWorker {
         initClient();
     }
 
-    protected void processHttpResponse() {
+    protected void processHttpResponse(boolean updateQuery) {
         // check if query execution took already longer than timeout
         boolean responseCodeOK = checkResponseStatus();
         if (responseCodeOK) { // response status is OK (200)
-            // get content type header
-            HttpEntity httpResponse = response.getEntity();
-            Header contentTypeHeader = new BasicHeader(httpResponse.getContentType().getName(), httpResponse.getContentType().getValue());
-            // get content stream
-            try (InputStream inputStream = httpResponse.getContent()) {
-                // read content stream
-                //Stream in resultProcessor, return length, set string in StringBuilder.
-                ByteArrayOutputStream responseBody = new ByteArrayOutputStream();
-                long length = resultProcessor.readResponse(inputStream, responseBody);
-                tmpExecutedQueries++;
-                // check if such a result was already parsed and is cached
+            if (updateQuery){
+                // No content - so just capture success, execution time and that the result size is 0
                 double duration = durationInMilliseconds(requestStartTime, Instant.now());
-                synchronized (this) {
-                    QueryResultHashKey resultCacheKey = new QueryResultHashKey(queryId, length);
-                    if (processedResults.containsKey(resultCacheKey)) {
-                        LOGGER.debug("found result cache key {} ", resultCacheKey);
-                        Long preCalculatedResultSize = processedResults.get(resultCacheKey);
-                        addResultsOnce(new QueryExecutionStats(queryId, COMMON.QUERY_SUCCESS, duration, preCalculatedResultSize));
-                    } else {
-                        // otherwise: parse it. The parsing result is cached for the next time.
-                        if (!this.endSignal) {
-                            resultProcessorService.submit(new HttpResultProcessor(this, queryId, duration, contentTypeHeader, responseBody, length));
-                            resultsSaved = true;
+                addResultsOnce(new QueryExecutionStats(queryId, COMMON.QUERY_SUCCESS, duration, 0));
+            }
+            else {
+                // get content type header
+                HttpEntity httpResponse = response.getEntity();
+                Header contentTypeHeader = new BasicHeader(httpResponse.getContentType().getName(), httpResponse.getContentType().getValue());
+                // get content stream
+                try (InputStream inputStream = httpResponse.getContent()) {
+                    // read content stream
+                    //Stream in resultProcessor, return length, set string in StringBuilder.
+                    ByteArrayOutputStream responseBody = new ByteArrayOutputStream();
+                    long length = resultProcessor.readResponse(inputStream, responseBody);
+                    tmpExecutedQueries++;
+                    // check if such a result was already parsed and is cached
+                    double duration = durationInMilliseconds(requestStartTime, Instant.now());
+                    synchronized (this) {
+                        QueryResultHashKey resultCacheKey = new QueryResultHashKey(queryId, length);
+                        if (processedResults.containsKey(resultCacheKey)) {
+                            LOGGER.debug("found result cache key {} ", resultCacheKey);
+                            Long preCalculatedResultSize = processedResults.get(resultCacheKey);
+                            addResultsOnce(new QueryExecutionStats(queryId, COMMON.QUERY_SUCCESS, duration, preCalculatedResultSize));
+                        } else {
+                            // otherwise: parse it. The parsing result is cached for the next time.
+                            if (!this.endSignal) {
+                                resultProcessorService.submit(new HttpResultProcessor(this, queryId, duration, contentTypeHeader, responseBody, length));
+                                resultsSaved = true;
+                            }
                         }
                     }
-                }
 
-            } catch (IOException | TimeoutException e) {
-                double duration = durationInMilliseconds(requestStartTime, Instant.now());
-                addResultsOnce(new QueryExecutionStats(queryId, COMMON.QUERY_HTTP_FAILURE, duration));
+                } catch (IOException | TimeoutException e) {
+                    double duration = durationInMilliseconds(requestStartTime, Instant.now());
+                    addResultsOnce(new QueryExecutionStats(queryId, COMMON.QUERY_HTTP_FAILURE, duration));
+                }
             }
         }
     }
@@ -278,10 +294,8 @@ public abstract class HttpWorker extends AbstractRandomQueryChooserWorker {
             ConcurrentMap<QueryResultHashKey, Long> processedResults = httpWorker.getProcessedResults();
             QueryResultHashKey resultCacheKey = new QueryResultHashKey(queryId, contentLength);
             try {
-                //String content = contentStream.toString(StandardCharsets.UTF_8.name());
-                //contentStream = null; // might be hugh, dereference immediately after consumed
                 Long resultSize = httpWorker.resultProcessor.getResultSize(contentTypeHeader, contentStream, contentLength);
-                contentStream = null;
+                contentStream = null;  // might be hugh, dereference immediately after consumed
                 // Save the result size to be re-used
                 processedResults.put(resultCacheKey, resultSize);
                 LOGGER.debug("added Result Cache Key {}", resultCacheKey);

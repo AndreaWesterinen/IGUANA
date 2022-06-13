@@ -24,9 +24,11 @@ public class Vocab {
     public static Property worker2metric =  ResourceFactory.createProperty(COMMON.PROP_BASE_URI+"metric");
     public static Property workerResult = ResourceFactory.createProperty(COMMON.PROP_BASE_URI+"workerResult");
 
+    public static Property insertProperty = ResourceFactory.createProperty(COMMON.PROP_BASE_URI + "insert");
+    public static Property deleteProperty = ResourceFactory.createProperty(COMMON.PROP_BASE_URI + "delete");
+
     public static Resource workerClass = ResourceFactory.createResource(COMMON.CLASS_BASE_URI+"Worker");
     public static Resource queryClass = ResourceFactory.createResource(COMMON.CLASS_BASE_URI+"Query");
     public static Resource metricClass = ResourceFactory.createResource( COMMON.CLASS_BASE_URI+"Metric");
-
 
 }

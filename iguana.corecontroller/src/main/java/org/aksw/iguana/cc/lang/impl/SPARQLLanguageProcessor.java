@@ -74,21 +74,33 @@ public class SPARQLLanguageProcessor extends AbstractLanguageProcessor implement
             model.add(subject, Vocab.rdfsID, wrappedQuery.getId().replace("sparql", ""));
             model.add(subject, RDFS.label, wrappedQuery.getQuery().toString());
             try {
-                Query q = QueryFactory.create(wrappedQuery.getQuery().toString());
-                SPARQLQueryStatistics qs2 = new SPARQLQueryStatistics();
-                qs2.getStatistics(q);
+                String queryText = wrappedQuery.getQuery().toString();
+                if (queryText.startsWith("INSERT DATA")) {
+                    model.add(subject, Vocab.insertProperty, model.createTypedLiteral(true));
+                    model.add(subject, Vocab.deleteProperty, model.createTypedLiteral(false));
+                }
+                else if (queryText.startsWith("DELETE DATA")) {
+                    model.add(subject, Vocab.insertProperty, model.createTypedLiteral(false));
+                    model.add(subject, Vocab.deleteProperty, model.createTypedLiteral(true));
+                }
+                // TODO - Other UPDATES
+                else {
+                    Query q = QueryFactory.create(queryText);
+                    SPARQLQueryStatistics qs2 = new SPARQLQueryStatistics();
+                    qs2.getStatistics(q);
 
-                model.add(subject, Vocab.aggrProperty, model.createTypedLiteral(qs2.aggr==1));
-                model.add(subject, Vocab.filterProperty, model.createTypedLiteral(qs2.filter==1));
-                model.add(subject, Vocab.groupByProperty, model.createTypedLiteral(qs2.groupBy==1));
-                model.add(subject, Vocab.havingProperty, model.createTypedLiteral(qs2.having==1));
-                model.add(subject, Vocab.triplesProperty, model.createTypedLiteral(qs2.triples));
-                model.add(subject, Vocab.offsetProperty, model.createTypedLiteral(qs2.offset==1));
-                model.add(subject, Vocab.optionalProperty, model.createTypedLiteral(qs2.optional==1));
-                model.add(subject, Vocab.orderByProperty, model.createTypedLiteral(qs2.orderBy==1));
-                model.add(subject, Vocab.unionProperty, model.createTypedLiteral(qs2.union==1));
-                model.add(subject, OWL.sameAs, getLSQHash(q));
-            }catch(Exception e){
+                    model.add(subject, Vocab.aggrProperty, model.createTypedLiteral(qs2.aggr == 1));
+                    model.add(subject, Vocab.filterProperty, model.createTypedLiteral(qs2.filter == 1));
+                    model.add(subject, Vocab.groupByProperty, model.createTypedLiteral(qs2.groupBy == 1));
+                    model.add(subject, Vocab.havingProperty, model.createTypedLiteral(qs2.having == 1));
+                    model.add(subject, Vocab.triplesProperty, model.createTypedLiteral(qs2.triples));
+                    model.add(subject, Vocab.offsetProperty, model.createTypedLiteral(qs2.offset == 1));
+                    model.add(subject, Vocab.optionalProperty, model.createTypedLiteral(qs2.optional == 1));
+                    model.add(subject, Vocab.orderByProperty, model.createTypedLiteral(qs2.orderBy == 1));
+                    model.add(subject, Vocab.unionProperty, model.createTypedLiteral(qs2.union == 1));
+                    model.add(subject, OWL.sameAs, getLSQHash(q));
+                }
+            } catch(Exception e){
                 LOGGER.warn("Query statistics could not be created. Not using SPARQL?");
             }
         }

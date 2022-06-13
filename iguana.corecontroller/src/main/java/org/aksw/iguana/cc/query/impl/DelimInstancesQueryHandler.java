@@ -44,7 +44,7 @@ public class DelimInstancesQueryHandler extends InstancesQueryHandler {
     }
 
     @Override
-    protected QuerySet[] generateUpdatesPerLine(String updatePath, String idPrefix, int hashcode) {
+    protected QuerySet[] generateUpdatePerLine(String updatePath, String idPrefix, int hashcode) {
             return generateQueryPerLine(updatePath, idPrefix, hashcode);
     }
 

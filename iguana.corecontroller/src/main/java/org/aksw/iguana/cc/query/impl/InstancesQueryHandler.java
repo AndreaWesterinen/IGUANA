@@ -46,8 +46,6 @@ public class InstancesQueryHandler extends AbstractWorkerQueryHandler {
 	protected LanguageProcessor langProcessor = new SPARQLLanguageProcessor();
 	protected int hashcode;
 
-	//protected int hashcode;
-
 	/**
 	 * Default Constructor
 	 * 
@@ -69,7 +67,6 @@ public class InstancesQueryHandler extends AbstractWorkerQueryHandler {
 
 		QuerySet[] queries = generateQueryPerLine(queryFileName, langProcessor.getQueryPrefix(), hashcode);
 		this.queryFiles = queries;
-
 
 		return queries;
 	}
@@ -139,8 +136,10 @@ public class InstancesQueryHandler extends AbstractWorkerQueryHandler {
 				int hashcode = FileUtils.getHashcodeFromFileContent(updatePath);
 
 				// assume is File with update/line use SPARQL approach
-				//TODO
-				return generateUpdatesPerLine(updatePath, "update", hashcode);
+				QuerySet[] queries = generateUpdatePerLine(updatePath, "update", hashcode);
+				this.queryFiles = queries;
+
+				return queries;
 			}
 		} else {
 			// dir must exist log this error, send empty file list back
@@ -150,7 +149,7 @@ public class InstancesQueryHandler extends AbstractWorkerQueryHandler {
 		return new QuerySet[] {};
 	}
 
-	protected QuerySet[] generateUpdatesPerLine(String updatePath, String idPrefix, int hashcode) {
+	protected QuerySet[] generateUpdatePerLine(String updatePath, String idPrefix, int hashcode) {
 		File queryFile = new File(updatePath);
 		List<QuerySet> ret = new LinkedList<QuerySet>();
 		LOGGER.info("[QueryHandler: {{}}] Queries will now be instantiated", this.getClass().getName());
